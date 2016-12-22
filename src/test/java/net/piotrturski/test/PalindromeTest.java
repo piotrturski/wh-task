@@ -1,4 +1,4 @@
-package net.piotrturski;
+package net.piotrturski.test;
 
 import com.googlecode.zohhak.api.TestWith;
 import com.googlecode.zohhak.api.runners.ZohhakRunner;
