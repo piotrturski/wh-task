@@ -10,6 +10,8 @@ dependencies {
 
     compile 'org.apache.commons:commons-lang3:3.5'
     compile 'com.google.guava:guava:20.0'
+    compile 'org.neo4j:neo4j-graph-algo:3.1.0'
+    compile 'one.util:streamex:0.6.4'
 
     testCompile 'junit:junit:4.12'
     testCompile 'com.googlecode.zohhak:zohhak:1.1.1'
