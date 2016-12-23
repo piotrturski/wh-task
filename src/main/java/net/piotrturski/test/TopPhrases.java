@@ -40,7 +40,7 @@ public abstract class TopPhrases {
         FibonacciHeap<Map.Entry<String, Long>> heap = new FibonacciHeap<>(MAX_VALUE_FIRST_COMPARATOR);
 
         StreamEx.ofLines(reader)
-                .flatMap(line -> StreamEx.split(line, '|'))//  Stream.of(StringUtils.split(line, "|")))
+                .flatMap(line -> StreamEx.split(line, '|'))
                 .map(String::trim)
                 .filter(StringUtils::isNotEmpty)
                 .collect(Collectors.groupingBy(Function.identity(), HashMap::new, Collectors.counting()))
