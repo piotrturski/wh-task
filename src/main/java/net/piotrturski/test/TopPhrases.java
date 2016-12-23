@@ -2,24 +2,29 @@ package net.piotrturski.test;
 
 import one.util.streamex.StreamEx;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.spark.api.java.JavaRDD;
 import org.neo4j.graphalgo.impl.util.FibonacciHeap;
+import scala.Tuple2;
 
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class TopPhrases {
 
+    private static final Pattern SEPARATOR = Pattern.compile("\\|");
     private static final Comparator<Map.Entry<String, Long>> MAX_VALUE_FIRST_COMPARATOR =
                                                                 Map.Entry.<String, Long>comparingByValue().reversed();
 
     /**
-     * reads file line by line, reduces / counts on the fly, takes top k using fibonacci heap
+     * reads input line by line, reduces / counts on the fly, takes top k using fibonacci heap
      *
      * assumptions: <br>
      *     - collection of unique labels fits memory <br>
@@ -28,6 +33,7 @@ public abstract class TopPhrases {
      *     - labels must not span multiple lines <br>
      *     - edge whitespaces are not part of labels <br>
      *     - labels are not empty <br>
+     *     - each label fits java max string size <br>
      * <br>
      *
      * computational complexity: amortized expected
@@ -55,4 +61,28 @@ public abstract class TopPhrases {
                 .map(Map.Entry::getKey);
     }
 
+    /**
+     * uses spark to
+     *
+     * assumptions:
+     *    - each line fits memory <br>
+     *    - each label fits java max string size <br>
+     *    - count of each label fits long value <br>
+     *
+     * @param file any spark RDD (in-memory collection or hadoop-supported location like hdfs, s3, hbase etc)
+     * @param top how many top phrases should be returned
+     * @return spark rdd. it can be
+     */
+    public static JavaRDD<String> sparkTopPhrases(JavaRDD<String> file, long top) {
+
+        return file.flatMap(line -> Arrays.asList(SEPARATOR.split(line)).iterator())
+                .mapToPair(label -> new Tuple2<>(label, 1L))
+                .reduceByKey(Long::sum) // complexity?
+                .mapToPair(Tuple2::swap)
+                .sortByKey(false) // complexity?
+                .values()
+                .zipWithIndex()
+                .filter(tuple -> tuple._2() < top) // 0 based index
+                .keys();
+    }
 }

@@ -1,16 +1,20 @@
 package net.piotrturski.test;
 
+import com.google.common.collect.Lists;
 import com.googlecode.zohhak.api.Coercion;
 import com.googlecode.zohhak.api.TestWith;
 import com.googlecode.zohhak.api.runners.ZohhakRunner;
 import one.util.streamex.StreamEx;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,12 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TopPhrasesTest {
 
     @TestWith({
-            "a b c | d | d | c | a b c  | d,                          d ; a b c ; c ",
-            "\n a b c \n | \n d \n | d | \n | ||c|\na b c\n \n| d,    d ; a b c ; c ",
-            "  , ",
-            " | | | | , ",
-            " \n \n , ",
-            " \n | \n , ",
+            "a b c|d|d|c|a b c|d,     d;a b c;c ",
+            "a b c|d\nd|c\na b c\nd,  d;a b c;c ",
             " a , a "
     })
     public void should_find_top_phrases(Reader reader, String[] topLabels) {
@@ -49,6 +49,31 @@ public class TopPhrasesTest {
                 .isSortedAccordingTo(Comparator.comparing(String::length).reversed());
     }
 
+
+    @Test
+    public void should_find_top_phrases_on_spark() {
+
+        try (JavaSparkContext spark = new JavaSparkContext(new SparkConf().setMaster("local[3]").setAppName("test"))) {
+
+            JavaRDD<String> rdd = spark.parallelize(Lists.newArrayList(
+                    "a|a|a",
+                    "a|b|b|c|d|c|d|c",
+                    "b|b|b",
+                    "c|c|c",
+                    "d",
+                    "d",
+                    "d"
+                    ));
+
+            List<String> top3 = TopPhrases.sparkTopPhrases(rdd, 3)
+                    .collect();
+
+            assertThat(top3)
+                    .startsWith("c")
+                    .containsOnly("c", "b", "d");
+        }
+    }
+
     @Coercion
     public Reader toReader(String input) {
         return new StringReader(input);
@@ -56,6 +81,6 @@ public class TopPhrasesTest {
 
     @Coercion
     public String[] toLabels(String input) {
-        return StreamEx.split(input, ';').remove(StringUtils::isBlank).map(String::trim).toArray(String[]::new);
+        return input.split(";");
     }
 }
