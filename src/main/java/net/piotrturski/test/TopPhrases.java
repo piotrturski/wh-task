@@ -21,6 +21,8 @@ public abstract class TopPhrases {
     /**
      * assumptions: <br>
      *     - collection of unique labels fits memory <br>
+     *     - each file line fits memory
+     *     - count of each label fits long value <br>
      *     - labels must not span multiple lines <br>
      *     - edge whitespaces are not part of labels <br>
      *     - labels are not empty <br>
