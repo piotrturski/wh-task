@@ -19,6 +19,8 @@ public abstract class TopPhrases {
                                                                 Map.Entry.<String, Long>comparingByValue().reversed();
 
     /**
+     * reads file line by line, reduces / counts on the fly, takes top k using fibonacci heap
+     *
      * assumptions: <br>
      *     - collection of unique labels fits memory <br>
      *     - each file line fits memory
