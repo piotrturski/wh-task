@@ -1,5 +1,3 @@
-drop function if exists initcap;
-
 delimiter //
 
 create function initcap( str longtext ) returns longtext
@@ -10,7 +8,7 @@ begin
 	declare beginning_of_word bool;
 	declare current_char varchar(1);
 	declare new_char varchar(1);
-	declare result longtext default '';
+	declare result longtext default if(str is null, null, '');
 
 	while i <= length(str) do
 		set beginning_of_word = locate(substring(str, i-1, 1), word_separators) > 0; -- returns true also for 1st letter
@@ -24,6 +22,3 @@ begin
 end //
 
 delimiter ;
-
--- select initcap('a bC	cc
--- dD');

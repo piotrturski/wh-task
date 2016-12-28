@@ -1,5 +1,3 @@
--- docker run --rm -e MYSQL_ALLOW_EMPTY_PASSWORD=true  mysql:5.7.17
-
-select v.*, @curRank := @curRank + 1 AS rank
+select v.*, cast(@curRank := @curRank + 1  as signed) AS rank -- cast fixes type for empty result
 from votes v, (SELECT @curRank := 0) r
 order by votes desc;

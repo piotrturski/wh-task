@@ -1,14 +1,3 @@
-drop table if exists sometbl;
-
-CREATE TABLE sometbl ( ID INT, NAME VARCHAR(50) );
-INSERT INTO sometbl VALUES (1, 'Smith'), (2, 'Julio|Jones|Falcons'), (3,'White|Snow'), (4, 'Paint|It|Red'),
- (5, 'Green|Lantern'), (6, 'Brown|bag|'), (7, ''), (8, null);
-
-drop procedure if exists to_rows;
-
-drop table if exists result_table;
-create table result_table ( ID INT, NAME VARCHAR(50) );
-
 delimiter //
 
 create procedure to_rows()
@@ -48,6 +37,3 @@ begin
 end //
 
 delimiter ;
-
-call to_rows();
-select * from result_table;
