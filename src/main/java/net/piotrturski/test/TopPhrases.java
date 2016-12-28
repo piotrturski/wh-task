@@ -1,7 +1,6 @@
 package net.piotrturski.test;
 
 import one.util.streamex.StreamEx;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.spark.api.java.JavaRDD;
 import org.neo4j.graphalgo.impl.util.FibonacciHeap;
 import scala.Tuple2;
@@ -30,13 +29,10 @@ public abstract class TopPhrases {
      *     - collection of unique labels fits memory <br>
      *     - each file line fits memory
      *     - count of each label fits long value <br>
-     *     - labels must not span multiple lines <br>
-     *     - edge whitespaces are not part of labels <br>
-     *     - labels are not empty <br>
      *     - each label fits java max string size <br>
      * <br>
      *
-     * computational complexity: amortized expected
+     * computational complexity: expected
      *              O(input-stream + number-of-requested-phrases log number-of-different-phrases) <br>
      * space complexity: O(input-stream)
      *
@@ -51,8 +47,6 @@ public abstract class TopPhrases {
 
         StreamEx.ofLines(reader)
                 .flatMap(line -> StreamEx.split(line, '|'))
-                .map(String::trim)
-                .filter(StringUtils::isNotEmpty)
                 .collect(Collectors.groupingBy(Function.identity(), HashMap::new, Collectors.counting()))
                 .entrySet()
                 .forEach(heap::insert);
@@ -68,6 +62,11 @@ public abstract class TopPhrases {
      *    - each line fits memory <br>
      *    - each label fits java max string size <br>
      *    - count of each label fits long value <br>
+     *
+     * <br>
+     * it's hard to assess complexity due to lack of spark documentation on complexity. dominant operations are
+     * one reduceByKey and one sortByKey, both of which require shuffle. I **guess**
+     * that overall complexity is O(n log n) disk operations + O(n) network operations
      *
      * @param file any spark RDD (in-memory collection or hadoop-supported location like hdfs, s3, hbase etc)
      * @param top how many top phrases should be returned
