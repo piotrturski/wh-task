@@ -1,0 +1,80 @@
+== Solution
+
+There is a lot of tests for both java and sql code and some dependencies.
+Fully working gradle project (jdk8 required) can be found at: https://github.com/piotrturski/wh-task
+
+Algorithms' space and time complexities are inside javadocs. Some of them uses expected and amortized time as they
+rely on hashmap and fibonacci heap.
+
+Sql solutions are in: `src/main/resources`, They were tested on mysql 5.7.17. To run sql tests (written in java),
+mysql db is needed. Easiest way to setup everything (port, user, password, db name) is to use docker:
+
+ docker run -p 3306:3306 --rm -e MYSQL_ALLOW_EMPTY_PASSWORD=true -e MYSQL_DATABASE=db mysql:5.7.17
+
+In case above values can't be used, they can be changed on java side in `DbTest.java` file.
+
+to run all tests: `/gradlew test`
+
+===== java dependencies
+
+----
+compile 'com.google.guava:guava:20.0'
+compile 'org.neo4j:neo4j-graph-algo:3.1.0'
+compile 'one.util:streamex:0.6.4'
+compile 'org.apache.spark:spark-core_2.11:2.0.2'
+
+testCompile 'junit:junit:4.12'
+testCompile 'com.googlecode.zohhak:zohhak:1.1.1'
+testCompile 'org.assertj:assertj-core:3.5.2'
+testCompile 'org.springframework:spring-jdbc:4.3.5.RELEASE'
+testCompile 'mysql:mysql-connector-java:5.1.40'
+testCompile "org.flywaydb:flyway-core:4.0.3"
+----
+
+===== documenting tests
+
+There is a lot of test cases, including nulls, whitespaces, numeric overflows, db setup etc
+therefore they are not documented in txt files as it would be just a code duplication.
+
+== Notes on solutions
+
+=== Top phrases
+
+Two solutions are provided to handle different situations:
+
+==== set of unique labels fits memory
+
+there is a simple in-memory streaming solution:
+
+- take reader as input param (so anything can be used: file, network stream, in-memory data)
+- read input line by line,
+- update counter for each label on the fly (storing in memory only unique lables),
+- later use fibonacci heap to extract top k labels (it benefits `k << n` while maintaining
+optimum asymptotic complexity for any value)
+- and return stream allowing client to take as many labels as needed
+
+==== extreme case: terrabytes of data, result bigger than memory
+
+use spark:
+
+- take RDD as input (so in-memory collection or any hadoop-supported location can be used like
+hdfs, s3, HBase etc) and number of top labels we want to get
+- count by label and sort unique labels everything
+- filter to provide only top k
+- return RDD so client can process it however he wants (store on hadoop, continue processing etc)
+
+it's tested using concurrent local spark mode
+
+=== sql 2 (capitalize words)
+
+Chars considered as word separators: space, tab, new line.
+
+=== sql 3 (split columns into rows)
+
+It reads from `sometbl` and writes to `result_table` table.
+It seems like a good real world scenario would be to use it as a 'before trigger'
+to on-the-fly normalize data inserted into a table;
+
+=== sql 4 (open bugs for date range)
+
+User-defined-variables are used to define the date range. They should be set before executing the sql.
